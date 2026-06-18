@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+	<Properties>
+		<!-- Read logDir from Spring Boot property, fallback to default if not set -->
+		<Property name="logDir">${springProperty:logging.path:-D:/Study/Java/Projects/isolve/BankTransaction/logs}</Property>
+	</Properties>
+
+	<Appenders>
+		<!-- Console Appender -->
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+		</Console>
+
+		<!-- Rolling File Appender -->
+		<RollingFile name="Rolling" fileName="${logDir}/logs.log" filePattern="${logDir}/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+			<PatternLayout>
+				<Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="10 MB" />
+			</Policies>
+		</RollingFile>
+
+		<!-- Routing Appender -->
+		<Routing name="Routing">
+			<Routes pattern="${ctx:stackOverFlow}">
+				<Route>
+					<RollingFile name="NestedAppender-${ctx:stackOverFlow}" fileName="${logDir}/current_threadContext_${ctx:stackOverFlow}.log" filePattern="${logDir}/current/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+						<PatternLayout>
+							<Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+						</PatternLayout>
+						<Policies>
+							<TimeBasedTriggeringPolicy />
+							<SizeBasedTriggeringPolicy size="10 MB" />
+						</Policies>
+					</RollingFile>
+				</Route>
+				<Route ref="Console" key="${ctx:stackOverFlow}" />
+			</Routes>
+		</Routing>
+	</Appenders>
+
+	<Loggers>
+		<Root level="INFO">
+			<AppenderRef ref="Console" />
+			<AppenderRef ref="Rolling" />
+			<AppenderRef ref="Routing" />
+		</Root>
+	</Loggers>
+</Configuration>

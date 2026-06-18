@@ -1,0 +1,121 @@
+
+/*** Database Creation  ***/
+
+create database BankTransaction;
+
+use banktransaction;
+
+/*** Table Creation  ***/
+
+
+drop table Customers;
+drop table Transactions;
+drop table Transaction_Log;
+
+create table Customers (
+	CustomerID varchar(10) primary key,
+	CustomerName varchar(30),
+	AccountNumber varchar(15) Unique, 
+	Balance numeric(13,2) default 0,
+	KYCStatus varchar(1) check(KYCStatus in ('V','P'))
+);
+
+create table Transactions(
+	TransactionID int auto_increment primary key,
+	AccountNumber varchar(15) not null check(AccountNumber<>''),
+	Amount numeric(13,2) default 0, 
+	TransactionType varchar(1) check(TransactionType in ('C','D')),
+	TransactionDate datetime default current_timestamp
+);
+
+create table Transaction_Log(
+	LogID int auto_increment primary key, 
+	AccountNumber  varchar(15) not null check(AccountNumber<>''),
+	Status varchar(1) check(Status in ('S','F')) ,
+	Remarks longtext ,
+	CreatedDate  datetime default current_timestamp
+);
+
+/*** SP Creation ***/
+
+--- insert Customer
+DELIMITER $$
+CREATE PROCEDURE SP_InsertCustomer(CustomerID varchar(10), CustomerName VARCHAR(30), AccountNumber VARCHAR(15),Balance DECIMAL(13,2),KYCStatus CHAR(1))
+BEGIN
+    INSERT INTO Customers (CustomerID, CustomerName,AccountNumber,Balance,KYCStatus)
+    VALUES (CustomerID, CustomerName,AccountNumber,Balance,KYCStatus);
+END$$
+
+DELIMITER ;
+
+
+
+--- Update Customer
+DELIMITER $$
+
+CREATE PROCEDURE SP_UpdateCustomer(CustomerName VARCHAR(30), AccountNumber VARCHAR(15),Balance DECIMAL(13,2),KYCStatus CHAR(1))
+BEGIN
+           UPDATE Customers c SET c.CustomerName = CustomerName,c.KYCStatus = KYCStatus
+			WHERE c.AccountNumber = AccountNumber;
+END $$
+
+DELIMITER ;
+
+
+--- Delete Customer
+
+DELIMITER $$
+
+CREATE PROCEDURE SP_DeleteCustomer(CustomerID varchar(10),AccountNumber VARCHAR(15))
+BEGIN
+    DELETE c
+    FROM Customers c
+    WHERE c.AccountNumber =AccountNumber;
+END $$
+
+DELIMITER ;
+
+--- Process Transaction
+
+
+-- insert Transaction
+
+
+DELIMITER $$
+
+CREATE PROCEDURE SP_InsertTransaction(AccountNumber VARCHAR(15), Amount DECIMAL(13,2),TransactionType varchar(1),TransactionDate datetime)
+BEGIN
+    INSERT INTO Transactions (AccountNumber,Amount,TransactionType,TransactionDate)
+        VALUES (AccountNumber,Amount,TransactionType,TransactionDate);
+END $$
+
+DELIMITER ;
+
+
+--- Select Transaction
+
+DELIMITER $$
+
+CREATE PROCEDURE sp_GetTransactionsByAccount( AccountNumber VARCHAR(15))
+BEGIN
+    SELECT  c.CustomerID,c.CustomerName,case when c.KYCStatus='V' then 'VERIFIED' else 'PENDING'end KYCStatus,
+    t.TransactionID,t.AccountNumber,t.Amount,t.TransactionType,t.TransactionDate  ,c.Balance  
+    FROM Transactions t
+    inner join customers c on c.AccountNumber=t.AccountNumber
+    WHERE t.AccountNumber = AccountNumber;
+END $$
+
+DELIMITER ;
+
+ -- transaction Log
+
+
+DELIMITER $$
+CREATE PROCEDURE SP_InsertTransactionLog(AccountNumber  varchar(15),Status varchar(1) ,	Remarks longtext )
+BEGIN
+    INSERT INTO Transaction_Log (AccountNumber, Status,Remarks)
+    VALUES (AccountNumber, Status,Remarks);
+END$$
+
+DELIMITER ;
+
